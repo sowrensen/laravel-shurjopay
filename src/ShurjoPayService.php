@@ -106,7 +106,7 @@ class ShurjoPayService
      * Attempt a payment via ShurjoPay payment gateway.
      *
      */
-    public function sendPayment()
+    public function makePayment()
     {
         $requestUrl = $this->serverUrl."/sp-data.php";
 
