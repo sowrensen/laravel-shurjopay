@@ -1,0 +1,47 @@
+{
+  "name": "sowrensen/laravel-shurjopay",
+  "description": "A package for handling ShurjoPay payment gateway in Laravel applications",
+  "keywords": [
+    "laravel",
+    "ShrujoPay",
+    "CGIT",
+    "payment-gateway",
+    "online-payment"
+  ],
+  "homepage": "https://github.com/sowrensen/laravel-shurjopay",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sowren Sen",
+      "email": "sowrensen@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.0",
+    "laravel/framework": ">=6.0",
+    "ext-curl": "*",
+    "ext-simplexml": "*"
+  },
+  "require-dev": {
+    "orchestra/testbench": ">=3.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "Sowren\\ShurjoPay\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Sowren\\ShurjoPay\\Test\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Sowren\\ShurjoPay\\ShurjoPayServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
