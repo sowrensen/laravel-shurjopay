@@ -2,7 +2,17 @@
 
 > A package for handling ShurjoPay payment gateway in Laravel applications
 
-Laravel-ShurjoPay is a package for handling ShurjoPay payment gateway easily in Laravel applications. It has some advantages over the official package provided by ShurjoPay—like auto-discovery for **Laravel 5.5+**—and is much more configurable and well-structured.
+Laravel-ShurjoPay is a package for handling ShurjoPay payment gateway easily in Laravel applications. It has some advantages over the package provided by ShurjoPay and is much more configurable and well-structured.
+
+##### Key differences with the official package
+
+- Auto discovery for Laravel 5.5+ projects. 🔍
+- ShurjoPay configurations can be defined on the fly. 🛸
+- Uses **Guzzle** instead of cURL by default.
+
+#### Changelog
+
+For detailed changelog please see [this file](CHANGELOG.MD).
 
 Installation
 ---

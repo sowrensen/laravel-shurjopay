@@ -3,7 +3,10 @@
 namespace Sowren\ShurjoPay;
 
 
+use GuzzleHttp\Client;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Request;
+use GuzzleHttp\Exception\GuzzleException;
 
 class ShurjoPayService
 {
@@ -64,6 +67,20 @@ class ShurjoPayService
     protected $txnId;
 
     /**
+     * XML data required by ShurjoPay.
+     *
+     * @var string
+     */
+    protected $xmlData;
+
+    /**
+     * Whether or not to use cURL.
+     *
+     * @var bool
+     */
+    protected $useCurl;
+
+    /**
      * ShurjoPayService constructor.
      * @param  float  $amount  Amount to pay
      * @param  string  $successUrl  URL to return after a successful transaction
@@ -71,6 +88,7 @@ class ShurjoPayService
      * @param  string|null  $merchantUsername  Merchant username provided by ShurjoPay
      * @param  string|null  $merchantPassword  Merchant password provided by ShurjoPay
      * @param  string|null  $merchantKeyPrefix  Merchant key prefix provided by ShurjoPay
+     * @param  bool  $useCurl  If false, cURL will be used instead of Guzzle
      */
     public function __construct(
         float $amount,
@@ -78,7 +96,8 @@ class ShurjoPayService
         string $serverUrl = null,
         string $merchantUsername = null,
         string $merchantPassword = null,
-        string $merchantKeyPrefix = null
+        string $merchantKeyPrefix = null,
+        bool $useCurl = false
     ) {
         $this->amount = $amount;
         $this->successUrl = $successUrl;
@@ -87,6 +106,7 @@ class ShurjoPayService
         $this->merchantPassword = $merchantPassword ?? config('shurjopay.merchant_password');
         $this->merchantKeyPrefix = $merchantKeyPrefix ?? config('shurjopay.merchant_key_prefix');
         $this->clientIp = Request::ip();
+        $this->useCurl = $useCurl;
     }
 
     /**
@@ -103,46 +123,111 @@ class ShurjoPayService
     }
 
     /**
+     * Guzzle client post request options.
+     *
+     * @return array
+     */
+    private function postOptions()
+    {
+        return [
+            'form_params' => [
+                'spdata' => $this->xmlData
+            ],
+            'verify' => false,
+            'timeout' => 3,
+            'curl' => [
+                CURLOPT_RETURNTRANSFER => true
+            ]
+        ];
+    }
+
+    /**
+     * Prepare XML data to send.
+     *
+     * @return void
+     */
+    private function setXmlData()
+    {
+        $default = '<?xml version="1.0" encoding="utf-8"?>'.
+            '<shurjoPay><merchantName>'.$this->merchantUsername.'</merchantName>'.
+            '<merchantPass>'.$this->merchantPassword.'</merchantPass>'.
+            '<userIP>'.$this->clientIp.'</userIP>'.
+            '<uniqID>'.$this->txnId.'</uniqID>'.
+            '<totalAmount>'.$this->amount.'</totalAmount>'.
+            '<paymentOption>shurjopay</paymentOption>'.
+            '<returnURL>'.$this->returnUrl().'</returnURL></shurjoPay>';
+
+        $this->xmlData = $this->useCurl ? 'spdata='.$default : $default;
+    }
+
+    /**
+     * Get return URL.
+     *
+     * @return string
+     */
+    private function returnUrl()
+    {
+        $returnUrl = route('shurjopay.response');
+        $returnUrl .= "?success_url={$this->successUrl}";
+        return $returnUrl;
+    }
+
+    /**
+     * Get request URL.
+     *
+     * @return string
+     */
+    private function requestUrl()
+    {
+        return Str::endsWith($this->serverUrl, '/')
+            ? $this->serverUrl.'sp-data.php'
+            : $this->serverUrl.'/sp-data.php';
+    }
+
+    /**
      * Attempt a payment via ShurjoPay payment gateway.
      *
+     * @throws GuzzleException
      */
     public function makePayment()
     {
-        $requestUrl = $this->serverUrl."/sp-data.php";
-
-        $returnUrl = route('shurjopay.response');
-        $returnUrl .= "?success_url={$this->successUrl}";
-
-        $requestXmlData = 'spdata=<?xml version="1.0" encoding="utf-8"?>
-                            <shurjoPay><merchantName>'.$this->merchantUsername.'</merchantName>
-                            <merchantPass>'.$this->merchantPassword.'</merchantPass>
-                            <userIP>'.$this->clientIp.'</userIP>
-                            <uniqID>'.$this->txnId.'</uniqID>
-                            <totalAmount>'.$this->amount.'</totalAmount>
-                            <paymentOption>shurjopay</paymentOption>
-                            <returnURL>'.$returnUrl.'</returnURL></shurjoPay>';
-
-        $this->sendRequest($requestUrl, $requestXmlData);
+        $this->setXmlData();
+        return $this->useCurl ? $this->sendRequestCurl() : $this->sendRequest();
     }
 
+    /**
+     * Send a HTTP request using Guzzle to ShurjoPay.
+     *
+     * @return \Psr\Http\Message\StreamInterface
+     * @throws GuzzleException
+     */
+    private function sendRequest()
+    {
+        try {
+            $client = new Client();
+            $response = $client->request('POST', $this->requestUrl(), $this->postOptions());
+            return $response->getBody();
+        } catch (GuzzleException $exception) {
+            throw $exception;
+        }
+    }
 
     /**
-     * Send a payment request using curl to ShurjoPay payment gateway.
+     * Send a payment request using cURL to ShurjoPay payment gateway.
      *
-     * @param  string  $requestUrl  The request URL
-     * @param  string  $requestXmlData  XML data containing transaction information
+     * @return string|true
      */
-    private function sendRequest(string $requestUrl, string $requestXmlData)
+    private function sendRequestCurl()
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $requestUrl);
+        curl_setopt($ch, CURLOPT_URL, $this->requestUrl());
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $requestXmlData);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $this->xmlData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         $response = curl_exec($ch);
         curl_close($ch);
-        print_r($response);
+        return print_r($response);
     }
 }

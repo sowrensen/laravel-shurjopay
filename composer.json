@@ -20,7 +20,8 @@
     "php": ">=7.0",
     "laravel/framework": ">=6.0",
     "ext-curl": "*",
-    "ext-simplexml": "*"
+    "ext-simplexml": "*",
+    "guzzlehttp/guzzle": ">=6.5.5"
   },
   "require-dev": {
     "orchestra/testbench": ">=3.6"
