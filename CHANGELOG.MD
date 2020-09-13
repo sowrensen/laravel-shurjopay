@@ -8,3 +8,4 @@ Changelog
 - Initial release. (v1.0.0)
 - Added Guzzle support. (v1.0.1)
 - Guzzle will be used by default to send request. (v1.0.1)
+- Moved `decryptResponse` mehtod to `ShurjoPayService` so that it can be used for customizing response handler. (v1.0.2)

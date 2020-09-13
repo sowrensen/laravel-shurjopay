@@ -4,6 +4,7 @@ namespace Sowren\ShurjoPay\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Sowren\ShurjoPay\ShurjoPayService;
 
 class ShurjoPayController extends Controller
 {
@@ -18,7 +19,7 @@ class ShurjoPayController extends Controller
     public function response(Request $request)
     {
         try {
-            $data = $this->decryptResponse($request->spdata);
+            $data = ShurjoPayService::decryptResponse($request->spdata);
             $txnId = $data->txID;
             $bankTxnId = $data->bankTxID;
             $amount = $data->txnAmount;
@@ -50,29 +51,5 @@ class ShurjoPayController extends Controller
         } catch (\Exception $exception) {
             throw $exception;
         }
-    }
-
-    /**
-     * Decrypt ShurjoPay response.
-     *
-     * @param  string  $data
-     * @return \SimpleXMLElement
-     */
-    private function decryptResponse(string $data)
-    {
-        $decryptionServerUrl = $this->getDecryptionServerUrl();
-        $decryptedResponse = file_get_contents($decryptionServerUrl."/merchant/decrypt.php?data=".$data);
-        $parsedObject = simplexml_load_string($decryptedResponse) or die("Error: Failed to create an object!");
-        return $parsedObject;
-    }
-
-    /**
-     * Determine the decryption URL based on application environment.
-     *
-     * @return string
-     */
-    private function getDecryptionServerUrl()
-    {
-        return app()->environment('local') ? 'https://shurjotest.com' : 'https://shurjopay.com';
     }
 }

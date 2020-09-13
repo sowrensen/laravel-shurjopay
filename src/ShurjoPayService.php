@@ -67,18 +67,25 @@ class ShurjoPayService
     protected $txnId;
 
     /**
-     * XML data required by ShurjoPay.
-     *
-     * @var string
-     */
-    protected $xmlData;
-
-    /**
      * Whether or not to use cURL.
      *
      * @var bool
      */
     protected $useCurl;
+
+    /**
+     * ShurjoPay response handler URL.
+     *
+     * @var string
+     */
+    protected $responseHandler;
+
+    /**
+     * XML data required by ShurjoPay.
+     *
+     * @var string
+     */
+    protected $xmlData;
 
     /**
      * ShurjoPayService constructor.
@@ -89,6 +96,7 @@ class ShurjoPayService
      * @param  string|null  $merchantPassword  Merchant password provided by ShurjoPay
      * @param  string|null  $merchantKeyPrefix  Merchant key prefix provided by ShurjoPay
      * @param  bool  $useCurl  If false, cURL will be used instead of Guzzle
+     * @param  string|null  $responseHandler  Custom ShurjoPay response handler URL
      */
     public function __construct(
         float $amount,
@@ -97,7 +105,8 @@ class ShurjoPayService
         string $merchantUsername = null,
         string $merchantPassword = null,
         string $merchantKeyPrefix = null,
-        bool $useCurl = false
+        bool $useCurl = false,
+        string $responseHandler = null
     ) {
         $this->amount = $amount;
         $this->successUrl = $successUrl;
@@ -107,6 +116,7 @@ class ShurjoPayService
         $this->merchantKeyPrefix = $merchantKeyPrefix ?? config('shurjopay.merchant_key_prefix');
         $this->clientIp = Request::ip();
         $this->useCurl = $useCurl;
+        $this->responseHandler = $responseHandler;
     }
 
     /**
@@ -167,7 +177,7 @@ class ShurjoPayService
      */
     private function returnUrl()
     {
-        $returnUrl = route('shurjopay.response');
+        $returnUrl = $this->responseHandler ?? route('shurjopay.response');
         $returnUrl .= "?success_url={$this->successUrl}";
         return $returnUrl;
     }
@@ -229,5 +239,29 @@ class ShurjoPayService
         $response = curl_exec($ch);
         curl_close($ch);
         return print_r($response);
+    }
+
+    /**
+     * Decrypt ShurjoPay response.
+     *
+     * @param  string  $data
+     * @return \SimpleXMLElement
+     */
+    public static function decryptResponse(string $data)
+    {
+        $decryptionServerUrl = self::getDecryptionServerUrl();
+        $decryptedResponse = file_get_contents($decryptionServerUrl."/merchant/decrypt.php?data=".$data);
+        $parsedObject = simplexml_load_string($decryptedResponse) or die("Error: Failed to create an object!");
+        return $parsedObject;
+    }
+
+    /**
+     * Determine the decryption URL based on application environment.
+     *
+     * @return string
+     */
+    private static function getDecryptionServerUrl()
+    {
+        return app()->environment('local') ? 'https://shurjotest.com' : 'https://shurjopay.com';
     }
 }
