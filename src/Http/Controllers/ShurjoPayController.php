@@ -32,14 +32,14 @@ class ShurjoPayController extends Controller
 
             switch ($resCode) {
                 case '000':
-                    $status = "Success";
+                    $status = 'Success';
                     $res['status'] = true;
-                    $res['message'] = 'Transaction attempt successful';
+                    $res['message'] = "Transaction attempt successful";
                     break;
                 default:
-                    $status = "Failed";
+                    $status = 'Failed';
                     $res['status'] = false;
-                    $res['message'] = 'Transaction attempt failed';
+                    $res['message'] = "Transaction attempt failed";
                     break;
             }
 
