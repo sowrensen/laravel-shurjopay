@@ -28,19 +28,6 @@ To install the package run
 composer require sowrensen/laravel-shurjopay
 ```
 
-Register (for Laravel < 5.5)
----
-
-Register the service provider in config/app.php
-
-```php
-'providers' => [
-    //...
-    Sowren\ShurjoPay\ShurjoPayServiceProvider::class,
-    //...
-];
-```
-
 Publish
 ---
 
