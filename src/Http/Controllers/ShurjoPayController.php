@@ -28,15 +28,18 @@ class ShurjoPayController extends Controller
             $resCodeDescription = $data->spCodeDes;
             $paymentOption = $data->paymentOption;
             $status = "";
+            $res = [];
 
             switch ($resCode) {
                 case '000':
                     $status = "Success";
-                    $res = ['status' => true, 'message' => 'Transaction attempt successful'];
+                    $res['status'] = true;
+                    $res['message'] = 'Transaction attempt successful';
                     break;
-                case '001':
+                default:
                     $status = "Failed";
-                    $res = ['status' => false, 'message' => 'Transaction attempt failed'];
+                    $res['status'] = false;
+                    $res['message'] = 'Transaction attempt failed';
                     break;
             }
 
