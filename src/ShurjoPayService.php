@@ -10,6 +10,9 @@ use GuzzleHttp\Exception\GuzzleException;
 
 class ShurjoPayService
 {
+    private const SERVER_URL_TEST = 'https://shurjotest.com';
+    private const SERVER_URL_PROD = 'https://shurjopay.com';
+
     /**
      * Amount to pay.
      *
@@ -246,13 +249,21 @@ class ShurjoPayService
      *
      * @param  string  $data
      * @return \SimpleXMLElement
+     * @throws GuzzleException
+     * @throws \Exception
      */
     public static function decryptResponse(string $data)
     {
-        $decryptionServerUrl = self::getDecryptionServerUrl();
-        $decryptedResponse = file_get_contents($decryptionServerUrl."/merchant/decrypt.php?data=".$data);
-        $parsedObject = simplexml_load_string($decryptedResponse) or die("Error: Failed to create an object!");
-        return $parsedObject;
+        try {
+            $client = new Client();
+            $decryptionServerUrl = self::getDecryptionServerUrl();
+            $response = $client->get("{$decryptionServerUrl}/merchant/decrypt.php?data={$data}");
+            return simplexml_load_string($response->getBody()->getContents());
+        } catch (GuzzleException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            throw $exception;
+        }
     }
 
     /**
@@ -262,6 +273,6 @@ class ShurjoPayService
      */
     private static function getDecryptionServerUrl()
     {
-        return app()->environment('local') ? 'https://shurjotest.com' : 'https://shurjopay.com';
+        return app()->environment('local') ? self::SERVER_URL_TEST : self::SERVER_URL_PROD;
     }
 }
