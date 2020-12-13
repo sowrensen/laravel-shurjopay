@@ -14,6 +14,11 @@ Laravel-ShurjoPay is a package for handling ShurjoPay payment gateway easily in 
 
 For detailed changelog please see [this file](CHANGELOG.MD).
 
+#### Requirements
+
+- PHP >= 7.2
+- Laravel >= 6.0
+
 Installation
 ---
 
